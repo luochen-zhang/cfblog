@@ -61,6 +61,7 @@ export async function getSiteSettings(env: Env): Promise<Record<string, any>> {
     const settings: Record<string, any> = {
       site_title: 'CFBlog',
       site_description: '基于 Cloudflare Workers + D1 + R2 构建的现代化博客系统',
+      site_theme: 'classic',
       site_url: 'http://localhost:8787',
       admin_email: 'admin@example.com',
       gravatar_base_url: DEFAULT_GRAVATAR_BASE_URL,
@@ -77,6 +78,7 @@ export async function getSiteSettings(env: Env): Promise<Record<string, any>> {
       notify_commenter_on_reply: '1',
       mail_from_name: 'CFBlog',
       mail_from_email: '',
+      resend_api_key: '',
       site_notice: '',
       social_telegram: '',
       social_x: '',
@@ -99,6 +101,7 @@ export async function getSiteSettings(env: Env): Promise<Record<string, any>> {
     return {
       site_title: 'CFBlog',
       site_description: '基于 Cloudflare Workers + D1 + R2 构建的现代化博客系统',
+      site_theme: 'classic',
       site_url: 'http://localhost:8787',
       admin_email: 'admin@example.com',
       gravatar_base_url: DEFAULT_GRAVATAR_BASE_URL,
@@ -115,6 +118,7 @@ export async function getSiteSettings(env: Env): Promise<Record<string, any>> {
       notify_commenter_on_reply: '1',
       mail_from_name: 'CFBlog',
       mail_from_email: '',
+      resend_api_key: '',
       site_notice: '',
       social_telegram: '',
       social_x: '',
@@ -484,6 +488,7 @@ export function formatTagResponse(tag: Tag, baseUrl: string): TagResponse {
 // Convert database Media to WordPress REST API response format
 export function formatMediaResponse(media: Media, baseUrl: string): MediaResponse {
   baseUrl = normalizeBaseUrl(baseUrl);
+  const mediaUrl = `/media/${media.r2_key.replace(/^\/+/, '')}`;
   return {
     id: media.id,
     date: media.created_at,
@@ -493,7 +498,7 @@ export function formatMediaResponse(media: Media, baseUrl: string): MediaRespons
     slug: media.filename,
     status: 'inherit',
     type: 'attachment',
-    link: media.url,
+    link: mediaUrl,
     title: {
       rendered: media.title
     },
@@ -517,7 +522,7 @@ export function formatMediaResponse(media: Media, baseUrl: string): MediaRespons
       file: media.filename,
       filesize: media.file_size
     },
-    source_url: media.url,
+    source_url: mediaUrl,
     _links: {
       self: [{ href: `${baseUrl}/wp-json/wp/v2/media/${media.id}` }],
       collection: [{ href: `${baseUrl}/wp-json/wp/v2/media` }],
@@ -562,9 +567,6 @@ export async function formatUserResponse(
       48: user.avatar_url || buildGravatarUrl(emailHash, 48, gravatarBaseUrl),
       96: user.avatar_url || buildGravatarUrl(emailHash, 96, gravatarBaseUrl)
     },
-    roles: [user.role],
-    role: user.role, // For backward compatibility
-    registered_date: user.registered_at,
     meta: [],
     _links: {
       self: [{ href: `${baseUrl}/wp-json/wp/v2/users/${user.id}` }],
@@ -575,6 +577,9 @@ export async function formatUserResponse(
   // Only include email for admin users
   if (isAdmin) {
     response.email = user.email;
+    response.roles = [user.role];
+    response.role = user.role;
+    response.registered_date = user.registered_at;
   }
 
   return response;

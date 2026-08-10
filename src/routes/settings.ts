@@ -2,14 +2,21 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../types'
 import { clearSettingsCache, normalizeGravatarBaseUrl } from '../utils'
 import { authMiddleware, requireRole } from '../auth'
+import { clearPublicSiteSettingsCache } from '../public-site/cache'
 
 const settings = new Hono<AppEnv>()
+const SENSITIVE_SETTING_KEYS = new Set([
+  'comment_turnstile_secret_key',
+  'resend_api_key',
+  'webhook_secret'
+])
 
 const PUBLIC_SETTING_KEYS = new Set([
   'site_title',
   'site_description',
   'site_keywords',
   'site_author',
+  'site_theme',
   'gravatar_base_url',
   'home_posts_per_page',
   'comment_turnstile_enabled',
@@ -26,7 +33,7 @@ const PUBLIC_SETTING_KEYS = new Set([
   'site_footer_text'
 ])
 
-// 获取所有系统设置（管理员专用，包含敏感字段）
+// 获取所有系统设置（管理员专用，密钥只返回配置状态）
 settings.get('/admin', authMiddleware, requireRole('administrator'), async (c) => {
   try {
     const result = await c.env.DB.prepare(`
@@ -35,10 +42,15 @@ settings.get('/admin', authMiddleware, requireRole('administrator'), async (c) =
       ORDER BY setting_key
     `).all()
 
-    // 将结果转换为对象格式，包含所有字段（包括敏感字段）
+    // Never send stored credentials back to the browser.
     const settingsObj: Record<string, string> = {}
     for (const row of result.results) {
-      settingsObj[row.setting_key as string] = row.setting_value as string
+      const key = row.setting_key as string
+      if (SENSITIVE_SETTING_KEYS.has(key)) {
+        settingsObj[`${key}_configured`] = String(row.setting_value || '').trim() ? '1' : '0'
+        continue
+      }
+      settingsObj[key] = row.setting_value as string
     }
 
     return c.json(settingsObj)
@@ -111,6 +123,10 @@ settings.put('/', authMiddleware, requireRole('administrator'), async (c) => {
     const updates = Object.entries(body)
 
     for (const [key, value] of updates) {
+      if (SENSITIVE_SETTING_KEYS.has(key) && !String(value || '').trim()) {
+        continue
+      }
+
       const settingValue = key === 'gravatar_base_url'
         ? normalizeGravatarBaseUrl(value)
         : value as string
@@ -126,6 +142,7 @@ settings.put('/', authMiddleware, requireRole('administrator'), async (c) => {
 
     // Clear settings cache
     clearSettingsCache()
+    await clearPublicSiteSettingsCache(c.env, c.req.url)
 
     return c.json({
       success: true,
@@ -140,8 +157,12 @@ settings.put('/', authMiddleware, requireRole('administrator'), async (c) => {
 // 更新单个设置（仅管理员）
 settings.put('/:key', authMiddleware, requireRole('administrator'), async (c) => {
   try {
-    const key = c.req.param('key')
+    const key = c.req.param('key') || ''
     const { value } = await c.req.json()
+    if (SENSITIVE_SETTING_KEYS.has(key) && !String(value || '').trim()) {
+      return c.json({ error: 'Sensitive settings cannot be replaced with an empty value' }, 400)
+    }
+
     const settingValue = key === 'gravatar_base_url'
       ? normalizeGravatarBaseUrl(value)
       : value
@@ -156,11 +177,13 @@ settings.put('/:key', authMiddleware, requireRole('administrator'), async (c) =>
 
     // Clear settings cache
     clearSettingsCache()
+    await clearPublicSiteSettingsCache(c.env, c.req.url)
 
     return c.json({
       success: true,
       key,
-      value: settingValue
+      value: SENSITIVE_SETTING_KEYS.has(key) ? undefined : settingValue,
+      configured: SENSITIVE_SETTING_KEYS.has(key) ? !!String(settingValue || '').trim() : undefined
     })
   } catch (error) {
     console.error('Error updating setting:', error)

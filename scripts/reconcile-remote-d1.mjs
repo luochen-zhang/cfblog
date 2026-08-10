@@ -209,6 +209,87 @@ const migrationPlan = [
       executeFile(`migrations/${this.id}`);
     },
   },
+  {
+    id: '0007_normalize_media_urls.sql',
+    description: 'domain-independent paths in media.url',
+    isSatisfied() {
+      if (!tableExists('media')) {
+        return false;
+      }
+
+      const rows = queryRows(
+        "SELECT COUNT(*) AS invalid_count FROM media WHERE url != '/media/' || ltrim(r2_key, '/');",
+      );
+      return Number(rows[0]?.invalid_count || 0) === 0;
+    },
+    reconcile() {
+      console.log(`Applying compatibility migration ${this.id}...`);
+      executeFile(`migrations/${this.id}`);
+    },
+  },
+  {
+    id: '0008_add_resend_api_key_setting.sql',
+    description: 'Resend API key in protected site settings',
+    isSatisfied() {
+      return siteSettingsExist(['resend_api_key']);
+    },
+    reconcile() {
+      console.log(`Applying compatibility migration ${this.id}...`);
+      executeFile(`migrations/${this.id}`);
+    },
+  },
+  {
+    id: '0009_add_user_token_version.sql',
+    description: 'users.token_version column for JWT revocation',
+    isSatisfied() {
+      return columnExists('users', 'token_version');
+    },
+    reconcile() {
+      console.log(`Applying compatibility migration ${this.id}...`);
+      executeFile(`migrations/${this.id}`);
+    },
+  },
+  {
+    id: '0010_add_auth_login_attempts.sql',
+    description: 'durable login throttling table and index',
+    isSatisfied() {
+      return (
+        tableExists('auth_login_attempts') &&
+        indexExists('idx_auth_login_attempts_window')
+      );
+    },
+    reconcile() {
+      console.log(`Applying compatibility migration ${this.id}...`);
+      executeFile(`migrations/${this.id}`);
+    },
+  },
+  {
+    id: '0011_add_site_theme_setting.sql',
+    description: 'selectable public-site theme in site_settings',
+    isSatisfied() {
+      return siteSettingsExist(['site_theme']);
+    },
+    reconcile() {
+      console.log(`Applying compatibility migration ${this.id}...`);
+      executeFile(`migrations/${this.id}`);
+    },
+  },
+  {
+    id: '0012_add_page_menu_fields.sql',
+    description: 'page menu visibility and priority columns in posts',
+    isSatisfied() {
+      return columnExists('posts', 'menu_hidden') && columnExists('posts', 'menu_priority');
+    },
+    reconcile() {
+      if (!columnExists('posts', 'menu_hidden')) {
+        executeSql('ALTER TABLE posts ADD COLUMN menu_hidden INTEGER NOT NULL DEFAULT 0;');
+      }
+
+      if (!columnExists('posts', 'menu_priority')) {
+        executeSql('ALTER TABLE posts ADD COLUMN menu_priority INTEGER NOT NULL DEFAULT 0;');
+      }
+    },
+  },
 ];
 
 function main() {

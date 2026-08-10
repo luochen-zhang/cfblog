@@ -13,7 +13,15 @@ CREATE TABLE IF NOT EXISTS users (
     registered_at TEXT DEFAULT CURRENT_TIMESTAMP,
     last_login TEXT,
     avatar_url TEXT,
-    bio TEXT
+    bio TEXT,
+    token_version INTEGER NOT NULL DEFAULT 0
+);
+
+-- Login rate limiting
+CREATE TABLE IF NOT EXISTS auth_login_attempts (
+    attempt_key TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    window_started_at INTEGER NOT NULL
 );
 
 -- Posts table
@@ -34,6 +42,8 @@ CREATE TABLE IF NOT EXISTS posts (
     comment_count INTEGER DEFAULT 0,
     view_count INTEGER DEFAULT 0,
     sticky INTEGER DEFAULT 0,
+    menu_hidden INTEGER NOT NULL DEFAULT 0,
+    menu_priority INTEGER NOT NULL DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
     published_at TEXT,
@@ -248,6 +258,7 @@ CREATE INDEX IF NOT EXISTS idx_moment_comments_parent ON moment_comments(parent_
 CREATE INDEX IF NOT EXISTS idx_moment_comments_status ON moment_comments(status);
 CREATE INDEX IF NOT EXISTS idx_moment_comments_author_ip_created ON moment_comments(author_ip, created_at);
 CREATE INDEX IF NOT EXISTS idx_moment_comments_author_email_created ON moment_comments(author_email, created_at);
+CREATE INDEX IF NOT EXISTS idx_auth_login_attempts_window ON auth_login_attempts(window_started_at);
 
 -- Insert default options
 INSERT OR IGNORE INTO options (option_name, option_value, autoload) VALUES
@@ -273,6 +284,7 @@ INSERT OR IGNORE INTO site_settings (setting_key, setting_value) VALUES
 ('site_description', '基于 Cloudflare Workers + D1 + R2 构建的现代化博客系统'),
 ('site_keywords', 'blog, cloudflare, workers, vue3, typescript'),
 ('site_author', 'CFBlog'),
+('site_theme', 'classic'),
 ('gravatar_base_url', 'https://cn.cravatar.com/avatar'),
 ('home_posts_per_page', '15'),
 ('comment_turnstile_enabled', '0'),
@@ -287,6 +299,7 @@ INSERT OR IGNORE INTO site_settings (setting_key, setting_value) VALUES
 ('notify_commenter_on_reply', '1'),
 ('mail_from_name', 'CFBlog'),
 ('mail_from_email', ''),
+('resend_api_key', ''),
 ('site_favicon', ''),
 ('site_logo', ''),
 ('site_notice', ''),

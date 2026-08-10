@@ -9,7 +9,6 @@ export interface Env {
   MEDIA: R2Bucket;
   AI: Ai;
   JWT_SECRET: string;
-  RESEND_API_KEY?: string;
   ADMIN_EMAIL: string;
   SITE_NAME: string;
   SITE_URL: string;
@@ -28,6 +27,7 @@ export interface User {
   last_login: string | null;
   avatar_url: string | null;
   bio: string | null;
+  token_version: number;
 }
 
 export interface UserResponse {
@@ -64,6 +64,8 @@ export interface Post {
   comment_count: number;
   view_count: number;
   sticky: number;
+  menu_hidden: number;
+  menu_priority: number;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -252,6 +254,7 @@ export interface JWTPayload extends JoseJWTPayload {
   username: string;
   email: string;
   role: User['role'];
+  tokenVersion: number;
   iat?: number;
   exp?: number;
 }

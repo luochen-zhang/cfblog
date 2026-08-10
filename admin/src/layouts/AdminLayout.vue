@@ -55,21 +55,17 @@ const userOptions = computed(() => [
 
 function openItem(item: (typeof navItems.value)[number]) {
   drawerOpen.value = false;
-  if (item.path) {
-    router.push(item.path);
-    return;
-  }
-  window.location.assign(`/wp-admin/legacy?route=${encodeURIComponent(item.key)}`);
+  router.push(item.path);
 }
 
-function handleUserAction(key: string) {
+async function handleUserAction(key: string) {
   if (key === 'language') {
     toggleLocale();
     return;
   }
   if (key === 'logout') {
     drawerOpen.value = false;
-    auth.clearSession();
+    await auth.logout();
     router.replace('/login');
   }
 }
