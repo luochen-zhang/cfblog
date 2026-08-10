@@ -1912,7 +1912,7 @@ function renderHero(input: {
 }
 
 function renderAside(common: CommonSiteData): string {
-  const asideAvatarUrl = common.site.adminAvatarUrl || common.site.logoUrl;
+  const asideAvatarUrl = common.site.logoUrl;
   return `
     <aside class="vh-aside">
       <section class="vh-aside-item user">
@@ -2546,7 +2546,7 @@ function getPrimaryNavItems(common: CommonSiteData): Array<{
     result.push(item);
   });
 
-  result.push({ external: true, href: '/wp-json/', icon: 'api', label: 'API' });
+  result.push({ external: true, href: '/about', icon: 'about', label: '关于本站' });
   return result;
 }
 
