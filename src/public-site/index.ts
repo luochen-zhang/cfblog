@@ -2546,7 +2546,7 @@ function getPrimaryNavItems(common: CommonSiteData): Array<{
     result.push(item);
   });
 
-  result.push({ external: true, href: '/about', icon: 'about', label: '关于本站' });
+  result.push({ external: true, href: '/wp-json/', icon: 'api', label: 'API' });
   return result;
 }
 
