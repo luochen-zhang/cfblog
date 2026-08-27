@@ -135,12 +135,23 @@ function isCookieRequestOriginAllowed(c: Context): boolean {
 
   const requestOrigin = new URL(c.req.url).origin;
   const origin = c.req.header('Origin');
+
+  // 读取信任源白名单
+  const trustedOrigins = (c.env.TRUSTED_ORIGINS || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+
   if (origin) {
+    // 如果origin在信任列表，直接允许；否则做原来相等校验
+    if (trustedOrigins.includes(origin)) {
+      return true;
+    }
     return origin === requestOrigin;
   }
 
-  const fetchSite = c.req.header('Sec-Fetch-Site');
-  return !fetchSite || fetchSite === 'same-origin' || fetchSite === 'none';
+  const fetchSite = c.req.header('Sec‑Fetch‑Site');
+  return !fetchSite || fetchSite === 'same‑origin' || fetchSite === 'none';
 }
 
 async function getCurrentUser(c: AppContext, token: string): Promise<JWTPayload | null> {
