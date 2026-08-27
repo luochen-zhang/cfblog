@@ -12,6 +12,7 @@ export interface Env {
   ADMIN_EMAIL: string;
   SITE_NAME: string;
   SITE_URL: string;
+  TRUSTED_ORIGINS?: string;
 }
 
 // User types
