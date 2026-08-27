@@ -5,9 +5,7 @@ compatibility_date = "2024-01-01"
 # Local development settings
 # Note: AI binding will still connect to remote even in local mode
 # This is expected behavior and will incur usage charges
-vars = {
-  TRUSTED_ORIGINS = "https://blog.195094.xyz"
-}
+vars = { TRUSTED_ORIGINS = "https://blog.195094.xyz" }
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
