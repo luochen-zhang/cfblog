@@ -23,7 +23,7 @@ bucket_name = "pan"
 binding = "AI"
 
 [assets]
-binding = "CACHE"
+binding = "ASSETS"
 directory = "./public"
 not_found_handling = "none"
 # Static files under public/ are served directly without invoking the Worker,
