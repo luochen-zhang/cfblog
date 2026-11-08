@@ -1891,7 +1891,7 @@ function renderHero(input: {
 }
 
 function renderAside(common: CommonSiteData): string {
-  const asideAvatarUrl = common.site.adminAvatarUrl || common.site.logoUrl;
+  const asideAvatarUrl = common.site.logoUrl;
   return `
     <aside class="vh-aside">
       <section class="vh-aside-item user">
